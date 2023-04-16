@@ -1,0 +1,241 @@
+# VBA-EXCEL
+Código para converter arquivos .arquivos em excel
+
+
+Sub GetFileNames()
+
+    Application.Calculation = xlCalculationManual
+    Application.DisplayAlerts = False
+    Application.ScreenUpdating = False
+    Application.EnableEvents = False
+
+    Dim fileNames() As String
+    Dim i As Integer
+    
+    ' Defina o diretório que contém os arquivos
+    Dim folderPath As String
+    folderPath = "C:\temp\convert"
+    
+    ' Obtenha uma lista de todos os arquivos no diretório
+    fileNames = GetFileNamesInFolder(folderPath)
+    
+    ' Exiba o nome de cada arquivo em uma mensagem separada
+For i = 0 To UBound(fileNames)
+        
+Dim nomeplan As String
+nomeplan = fileNames(i)
+        ActiveWorkbook.Queries.Add Name:=nomeplan, Formula:= _
+        "let" & Chr(13) & "" & Chr(10) & "    Fonte = Csv.Document(File.Contents(""C:\temp\convert\" & nomeplan & """),[Delimiter="";"", Columns=20, Encoding=1252, QuoteStyle=QuoteStyle.None])," & Chr(13) & "" & Chr(10) & "    #""Cabeçalhos Promovidos"" = Table.PromoteHeaders(Fonte, [PromoteAllScalars=true])," & Chr(13) & "" & Chr(10) & "    #""Tipo Alterado"" = Table.TransformColumnTypes(#""Cabeçalhos Promovidos"",{{""cod ativo"", type text}, {"" tp cons"", type " & _
+        "text}, {"" Local"", type text}, {"" Muni"", type text}, {"" Dime"", type text}, {"" Lat e Long"", type text}, {"" Conclu"", type text}, {"" Const"", type text}, {"" Conce"", type text}, {"" Conserva"", type text}, {"" Operacional"", type text}, {"" Manuten"", type text}, {"" Desc ativo"", type text}, {"" Util Sane"", type text}, {"" ETE-ETA"", type text}, {"" Implan" & _
+        "t-Ref"", type text}, {"" Obs"", type text}, {"" Tec"", type text}, {"" Info adici"", type text}, {"" Fotos"", Int64.Type}})" & Chr(13) & "" & Chr(10) & "in" & Chr(13) & "" & Chr(10) & "    #""Tipo Alterado"""
+    ActiveWorkbook.Worksheets.Add
+    With ActiveSheet.ListObjects.Add(SourceType:=0, Source:= _
+        "OLEDB;Provider=Microsoft.Mashup.OleDb.1;Data Source=$Workbook$;Location=LMDM1001;Extended Properties=""""" _
+        , Destination:=Range("$A$1")).QueryTable
+        .CommandType = xlCmdSql
+        .CommandText = Array("SELECT * FROM [" & nomeplan & "]")
+        .RowNumbers = False
+        .FillAdjacentFormulas = False
+        .PreserveFormatting = True
+        .RefreshOnFileOpen = False
+        .BackgroundQuery = True
+        .RefreshStyle = xlInsertDeleteCells
+        .SavePassword = False
+        .SaveData = True
+        .AdjustColumnWidth = True
+        .RefreshPeriod = 0
+        .PreserveColumnInfo = True
+        .ListObject.DisplayName = nomeplan
+        .Refresh BackgroundQuery:=False
+    End With
+        
+    Next i
+    
+Call Juntar_Abas
+Call excluir_linhas
+Call formatarTabelas
+
+ Application.EnableEvents = True
+  Application.ScreenUpdating = True
+  Application.DisplayAlerts = True
+  Application.Calculation = xlCalculationAutomatic
+
+End Sub
+
+Function GetFileNamesInFolder(folderPath As String) As String()
+
+Application.Calculation = xlCalculationManual
+    Application.DisplayAlerts = False
+    Application.ScreenUpdating = False
+    Application.EnableEvents = False
+    Application.ScreenUpdating = False
+    Application.DisplayAlerts = False
+    
+    Dim fileName As String
+    Dim fileNames() As String
+    Dim i As Integer
+    
+    ' Certifique-se de que o caminho da pasta termine com uma barra invertida
+    If Right(folderPath, 1) <> "\" Then folderPath = folderPath & "\"
+    
+    ' Obtenha o primeiro arquivo na pasta
+    fileName = Dir(folderPath & ".")
+    
+    ' Percorra todos os arquivos na pasta e adicione seus nomes a um array
+    i = 0
+    While fileName <> ""
+        ReDim Preserve fileNames(i)
+        fileNames(i) = fileName
+        i = i + 1
+        fileName = Dir()
+    Wend
+    
+    ' Retorne o array com os nomes de arquivo
+    GetFileNamesInFolder = fileNames
+    
+ Application.EnableEvents = True
+  Application.ScreenUpdating = True
+  Application.DisplayAlerts = True
+  Application.Calculation = xlCalculationAutomatic
+    
+End Function
+
+Sub Juntar_Abas()
+
+''Este código VBA é usado para juntar o conteúdo de todas as abas (planilhas) em um único local. A macro começa definindo algumas configurações de aplicativo que são desativadas temporariamente para melhorar o desempenho do código. A macro então cria uma nova planilha chamada "Planilha Final".
+''Em seguida, ele percorre todas as planilhas na pasta de trabalho, exceto a planilha recém-criada "Planilha Final". Para cada planilha, a macro copia o cabeçalho (linha 1) para a primeira linha da planilha final e, em seguida, copia todos os dados abaixo do cabeçalho para a planilha final.
+''A variável "lr" é usada para acompanhar a última linha não vazia na planilha final, para que a nova linha possa ser adicionada logo abaixo dela. A variável "lc" é usada para determinar o número de colunas na planilha de origem, para que a macro possa copiar todos os dados corretamente.
+''No final da macro, as configurações de aplicativo são restauradas para seus valores originais.
+
+Application.Calculation = xlCalculationManual
+    Application.DisplayAlerts = False
+    Application.ScreenUpdating = False
+    Application.EnableEvents = False
+    Application.ScreenUpdating = False
+    Application.DisplayAlerts = False
+
+Dim ws As Worksheet
+Dim lr As Long, lc As Long
+Dim i As Long, j As Long
+Dim PlanilhaFinal As Worksheet
+
+Set PlanilhaFinal = Sheets.Add(After:=Sheets(Sheets.Count))
+PlanilhaFinal.Name = "Planilha Final"
+
+lr = PlanilhaFinal.Cells(Rows.Count, 1).End(xlUp).Row
+
+For Each ws In Worksheets
+    If ws.Name <> PlanilhaFinal.Name Then
+        lc = ws.Cells(1, Columns.Count).End(xlToLeft).Column
+        For j = 1 To lc
+            PlanilhaFinal.Cells(1, j).Offset(lr, 0).Value = ws.Cells(1, j).Value
+        Next j
+        lr = PlanilhaFinal.Cells(Rows.Count, 1).End(xlUp).Row
+        lr = IIf(lr = 1, lr, lr + 1)
+        lr = PlanilhaFinal.Cells(Rows.Count, 1).End(xlUp).Row
+        For i = 2 To ws.Cells(Rows.Count, 1).End(xlUp).Row
+            For j = 1 To lc
+                PlanilhaFinal.Cells(1, j).Offset(lr, 0).Value = ws.Cells(i, j).Value
+            Next j
+            lr = PlanilhaFinal.Cells(Rows.Count, 1).End(xlUp).Row
+        Next i
+    End If
+Next ws
+
+ Application.EnableEvents = True
+  Application.ScreenUpdating = True
+  Application.DisplayAlerts = True
+  Application.Calculation = xlCalculationAutomatic
+
+End Sub
+
+
+Sub excluir_linhas()
+
+''Este código é uma macro VBA do Excel que tem como objetivo excluir linhas específicas de uma planilha denominada "Planilha Final".
+''A primeira parte do código desativa algumas funcionalidades do Excel, como a atualização da tela e a exibição de alertas, a fim de acelerar a execução da macro.
+''A variável "linha" é declarada como um inteiro e é usada para armazenar o número da linha atual da célula ativa.
+''Em seguida, a primeira linha da planilha é excluída. Isso é feito para remover o cabeçalho da tabela e garantir que o loop comece na linha correta.
+''A macro, então, seleciona a célula A3 como a célula ativa e armazena o número da linha na variável "linha".
+''O loop começa e continua enquanto o valor da célula ativa não for vazio. Dentro do loop, a macro verifica se o valor da célula ativa é "cod ativo". Se for, a macro seleciona a linha atual (que contém o valor "cod ativo") e as 99 linhas seguintes e as exclui. O código então seleciona a célula abaixo da última linha excluída e armazena o número da linha na variável "linha". Se o valor da célula ativa não for "cod ativo", a macro simplesmente seleciona a célula abaixo da célula ativa e armazena o número da linha na variável "linha".
+''Finalmente, a macro reativa as funcionalidades do Excel que foram desativadas no início da macro.
+
+Application.Calculation = xlCalculationManual
+    Application.DisplayAlerts = False
+    Application.ScreenUpdating = False
+    Application.EnableEvents = False
+    Application.ScreenUpdating = False
+    Application.DisplayAlerts = False
+    
+    
+Dim linha As Integer
+
+Sheets("Planilha Final").Select
+Rows("1:1").Select
+Selection.Delete Shift:=xlUp
+
+Range("A3").Select
+linha = ActiveCell.Row
+
+Do While ActiveCell.Value <> ""
+
+    If ActiveCell.Value = "cod ativo" Then
+        Range(Cells(linha, 1), Cells(linha, 100)).Select
+        Selection.Delete Shift:=xlUp
+        ActiveCell.Offset(1, 0).Select
+        linha = ActiveCell.Row
+    Else
+        ActiveCell.Offset(1, 0).Select
+        linha = ActiveCell.Row
+    End If
+Loop
+
+ Application.EnableEvents = True
+  Application.ScreenUpdating = True
+  Application.DisplayAlerts = True
+  Application.Calculation = xlCalculationAutomatic
+
+End Sub
+
+
+Sub formatarTabelas()
+
+'' "formatarTabelas", tem como objetivo formatar uma tabela específica em uma planilha. Ela começa definindo as mesmas configurações do Excel que a primeira macro. A seguir, a macro seleciona todas as células na planilha, encontrando a última célula preenchida na coluna A e utilizando isso para determinar a extensão da tabela. Então, ela adiciona uma nova tabela a partir do intervalo de células selecionado e dá o nome "Tabela6" a ela. Em seguida, a macro define o estilo da tabela como "TableStyleLight9" e oculta as linhas de grade da janela do Excel. Por fim, a macro ajusta a largura das colunas da tabela e redefine as configurações do Excel para seus valores originais.
+
+Application.Calculation = xlCalculationManual
+    Application.DisplayAlerts = False
+    Application.ScreenUpdating = False
+    Application.EnableEvents = False
+    Application.ScreenUpdating = False
+    Application.DisplayAlerts = False
+
+    Range("A1").Select
+    Range(Selection, Selection.End(xlToRight)).Select
+    Range(Selection, Selection.End(xlDown)).Select
+    Range(Selection, Selection.End(xlUp)).Select
+    Range(Selection, Selection.End(xlDown)).Select
+    Application.CutCopyMode = False
+    
+    
+    Dim lastRow As Long
+    lastRow = ActiveSheet.Cells(Rows.Count, "A").End(xlUp).Row
+
+    ActiveSheet.ListObjects.Add(xlSrcRange, Range("$A$1:$T$" & lastRow), , xlYes).Name = _
+        "Tabela6"
+    
+    Range("Tabela6[#All]").Select
+    ActiveSheet.ListObjects("Tabela6").TableStyle = "TableStyleLight9"
+    Range("Tabela6[[#Headers],[cod ativo]]").Select
+    ActiveWindow.DisplayGridlines = False
+    Cells.Select
+    Cells.EntireColumn.AutoFit
+    Range("Tabela6[[#Headers],[cod ativo]]").Select
+    
+    
+ Application.EnableEvents = True
+  Application.ScreenUpdating = True
+  Application.DisplayAlerts = True
+  Application.Calculation = xlCalculationAutomatic
+
+End Sub
+
