@@ -64,8 +64,6 @@ Application.Calculation = xlCalculationManual
     Application.DisplayAlerts = False
     Application.ScreenUpdating = False
     Application.EnableEvents = False
-    Application.ScreenUpdating = False
-    Application.DisplayAlerts = False
     
     Dim fileName As String
     Dim fileNames() As String
@@ -107,8 +105,7 @@ Application.Calculation = xlCalculationManual
     Application.DisplayAlerts = False
     Application.ScreenUpdating = False
     Application.EnableEvents = False
-    Application.ScreenUpdating = False
-    Application.DisplayAlerts = False
+
 
 Dim ws As Worksheet
 Dim lr As Long, lc As Long
@@ -160,8 +157,6 @@ Application.Calculation = xlCalculationManual
     Application.DisplayAlerts = False
     Application.ScreenUpdating = False
     Application.EnableEvents = False
-    Application.ScreenUpdating = False
-    Application.DisplayAlerts = False
     
     
 Dim linha As Integer
@@ -202,8 +197,7 @@ Application.Calculation = xlCalculationManual
     Application.DisplayAlerts = False
     Application.ScreenUpdating = False
     Application.EnableEvents = False
-    Application.ScreenUpdating = False
-    Application.DisplayAlerts = False
+
 
     Range("A1").Select
     Range(Selection, Selection.End(xlToRight)).Select
